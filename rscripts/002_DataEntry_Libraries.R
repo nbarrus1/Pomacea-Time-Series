@@ -1,3 +1,5 @@
+
+rm(list = ls())
 #---------------------------------
 ####Libraries####
 #---------------------------------
@@ -46,7 +48,12 @@ SRS.raw <- read_excel(here("data","SRS_POMPAL_forbayesproject.xlsx"),
   filter(Site != "CP") |> 
   mutate(Site = as.numeric(Site),
          Throw = if_else(Throw == "1,2,3,4,5,6,7"|Throw == "1,2,7",
-                         true = 1, false = as.numeric(Throw)))
+                         true = 1, false = as.numeric(Throw)),
+         filter.temp = if_else(is.na(Comments),true = "a",
+                               false = if_else(Comments == "EMPTY", true = "b",
+                                               false = "a"))) |> 
+  filter(filter.temp == "a") |> 
+  select(-filter.temp)
 
 x <- expand_grid(Year = unique(SRS.raw$Year),
                  Period = unique(SRS.raw$Period),
@@ -71,7 +78,7 @@ SRS.complete <- x |>
   full_join(SRS.raw, by = c("Region","Year","Period","Site","Plot","Throw")) |> 
   select(-Page,-`Sorted By`,-`Entered By`,-`Checked By`,-Day) |>
   mutate(Length_mm = if_else(is.na(Length_mm)&is.na(Comments),
-                             true = 0, false = Length_mm),
+                             true = NA_integer_, false = Length_mm),
          Species = if_else(is.na(Species)&is.na(Comments),
                            true = "NO_POMPAL",false = Species),
          Month = case_when(Period == 1 ~2,
@@ -81,40 +88,32 @@ SRS.complete <- x |>
                            Period == 5 ~12),
          Day = 1)
   
-
-SRS.complete|> ggplot(aes(x = Length_mm))+
-  theme_bw()+
-  geom_histogram()+
-  facet_grid(Species~Period, scales = "free_y")
-
-SRS.complete|> ggplot(aes(x = Length_mm))+
-  theme_bw()+
-  geom_histogram()+
-  facet_grid(Year~Species, scales = "free_y")
-
-SRS.complete|> ggplot(aes(x = Length_mm))+
-  theme_bw()+
-  geom_histogram()+
-  facet_grid(Species~Site, scales = "free_y")
-
-
 SRS.summ <- SRS.complete |> 
   group_by(Year,Month,Day,Period,Site,Plot,Species,Throw) |> 
   summarise(count= n()) |> 
-  group_by(Year,Month,Day,Period,Site,Species) |> 
+  group_by(Year,Month,Day,Period,Site,Plot,Species) |> 
   summarise(n = n(),
             count = sum(count)) |> 
   mutate(n = if_else(is.na(Species),
                      true = NA_integer_,
                      false = n),
          n_throw = sum(n,na.rm = TRUE)) |> 
-  pivot_wider(names_from = Species, values_from = count) |> 
+  pivot_wider(names_from = Species, values_from = count)|>
+  group_by(Year,Site) |> 
+  summarise(n_throw = sum(n, na.rm = T),
+            NO_POMPAL = sum(NO_POMPAL,na.rm = T),
+            POMPAL = sum(POMPAL,na.rm = T),
+            `NA` = sum(`NA`,na.rm = T)) |> 
   mutate(POMPAL = if_else(is.na(POMPAL) & is.na(`NA`),
                                 true = 0,
                                 false = POMPAL),
-         density = POMPAL/n.throw) |> 
+         density = POMPAL/n_throw) #|> 
   unite(Month,Day,Year,col = "Date", sep = "/") |> 
-  mutate(Date = mdy(Date)) |> 
-  select(-NO_POMPAL,-`NA`,-n) 
+  mutate(Date = mdy(Date),
+         Year = year(Date),
+         Month = month(Date),
+         Day = day(Date))  
 
 
+throws <- SRS.summ |> 
+  select(-POMPAL,-NO_POMPAL,-`NA`,-density)

@@ -1,0 +1,40 @@
+model {
+#---------
+#main set up
+#---------
+
+mu.len <-26.5057
+sd.len <-9.92816
+tau.len <-1/(sd.len*sd.len)
+
+#priors for detection model coefficients
+
+a1 ~ dnorm(0, 1.0E-6)
+b1 ~ dnorm(0, 1.0E-6)
+
+#priors for existance model coefficients
+
+a2 ~ dnorm(0, 1.0E-6)
+b2[1] ~ dnorm(0, 1.0E-6)
+b2[2] ~ dnorm(0, 1.0E-6)
+b2[3] ~ dnorm(0, 1.0E-6)
+
+#---------
+#main loop
+#---------
+
+for(i in 1:nsite) {
+  for(j in 1:ncol) {
+    len[i,j]~dnorm(mu.len,tau.len)
+    logit(P.detect[i,j])<-a1+b1*len[i,j]
+    logit(P.exist[i,j])<- a2+b2[1]*year[i]+b2[2]*site[i]+b2[3]*year[i]*site[i]
+    z[i,j]~dbern(P.exist[i,j])
+    mu[i,j]<-z[i,j]*P.detect[i,j]
+    y[i,j]~dbern(mu[i,j])
+    LL[i,j]<-log((y[i,j]*mu[i,j])+((1-y[i,j])*(1-mu[i,j])))
+  }
+ #calculated quantities
+ N.plot[i]<-sum(z[i,])  
+ D.plot[i]<-N.plot[i]/nthrow[i]
+}
+      }
