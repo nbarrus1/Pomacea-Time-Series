@@ -22,7 +22,8 @@ pompal_85to98_raw <- read_excel(here("data","MacroInvert 85-98 & throw numbers f
                             skip = 1, sheet = 1, na = c("",".")) |> 
   mutate(pompal = if_else(Order == 1, true = "pompal",false = "other")) |> 
   filter(pompal == "pompal") |> 
-  rename(Cnt = Number...16)
+  rename(Cnt = Number...16) |> 
+  filter(Site != 20)
 
 
 ###create function to take my count data to individual data
@@ -180,8 +181,8 @@ SRS.summ <- SRS.complete |>
          n_throw = sum(n,na.rm = TRUE)) |> 
   pivot_wider(names_from = Species, values_from = count)|>
   ungroup() |> 
-  #group_by(Year,Month,Day, Period,Site, Plot) |>
-  group_by(Year,Month,Day, Period,Site) |> 
+  group_by(Year,Month,Day, Period,Site, Plot) |>
+  #group_by(Year,Month,Day, Period,Site) |> 
   #group_by(Year,Site) |> 
   summarise(n_throw = sum(n, na.rm = T) ,
             NO_POMPAL = sum(NO_POMPAL,na.rm = T),
@@ -202,6 +203,6 @@ throws <- SRS.summ |>
   select(-POMPAL,-NO_POMPAL,-`NA`,-density)
 
 
-rm(pompal_85to97_mul,pompal_85to98_raw,pompal_85to97_ind, SRS.raw,x,y,z)
+rm(pompal_85to97_mul,pompal_85to98_raw,pompal_85to97_ind, SRS.raw,x,y,z, addrows_fromcolumn)
 
 

@@ -1,0 +1,45 @@
+model {
+
+#---------
+#main set up
+#---------
+
+mu.len <-26.5057
+sd.len <-9.92816
+tau.len <-1/(sd.len*sd.len)
+
+#priors for detection model coefficients
+
+b[1] ~ dnorm(0, 1.0E-6)
+b[2] ~ dnorm(0, 1.0E-6)
+
+#priors for existance model coefficients
+
+a[1] ~ dnorm(0, 1.0E-6)
+a[2] ~ dnorm(0, 1.0E-6)
+a[3] ~ dnorm(0, 1.0E-6)
+a[4] ~ dnorm(0, 1.0E-6)
+
+
+#--------------
+#main loop for occupancy
+#--------------
+
+for (i in 1:N) {
+  ones[i] ~ dbern(psi[i])
+  logit(psi[i]) <- a[1] + a[2]*year[i] + a[3]*site[i] + a[4]*year[i]*site[i]
+  for(j in 1:nrep) {
+    len[i,j]~dnorm(mu.len,tau.len)
+    y[i,j] ~ dbern(theta[i,j])
+    logit(theta[i,j]) <- b[1] + b[2]*len[i,j]
+  }
+}
+for (i in (N+1):n_unit) {
+  ones[i] ~ dbern(1-psi[i] + psi[i] * (1-theta[i,1]) * (1-theta[i,2]) * (1-theta[i,3]) * (1-theta[i,4])) *(1-theta[i,5])) * (1-theta[i,6])) * (1-theta[i,7])) * (1-theta[i,8])) * (1-theta[i,9]))  * (1-theta[i,10])) * (1-theta[i,11]) * (1-theta[i,12]) * (1-theta[i,13]) * (1-theta[i,14])) *(1-theta[i,15])) * (1-theta[i,16])) * (1-theta[i,17])) * (1-theta[i,18])) * (1-theta[i,19]))  * (1-theta[i,20]))  * (1-theta[i,21]) * (1-theta[i,22]) * (1-theta[i,23]) * (1-theta[i,24])) *(1-theta[i,25])) * (1-theta[i,26])) * (1-theta[i,27])) * (1-theta[i,28])) * (1-theta[i,29]))  * (1-theta[i,30])) * (1-theta[i,31]) * (1-theta[i,32]) * (1-theta[i,33]) * (1-theta[i,34])) *(1-theta[i,35])) * (1-theta[i,36])) * (1-theta[i,37])) * (1-theta[i,38])) * (1-theta[i,39]))  * (1-theta[i,40]))* (1-theta[i,41]) * (1-theta[i,42]) * (1-theta[i,43]) * (1-theta[i,44])) *(1-theta[i,45])) * (1-theta[i,46])) * (1-theta[i,47])) * (1-theta[i,48])) * (1-theta[i,49]))  * (1-theta[i,50]))* (1-theta[i,51]) * (1-theta[i,52]) * (1-theta[i,53]) * (1-theta[i,54])) *(1-theta[i,55])) * (1-theta[i,56])) * (1-theta[i,57])) * (1-theta[i,58])) * (1-theta[i,59]))  * (1-theta[i,60]))                      
+  logit(psi[i]) <- a[1] + a[2]*year[i] + a[3]*site[i] + a[4]*year[i]*site[i]
+  for(j in 1: n_rep) {
+    len[i,j]~dnorm(mu.len,tau.len)
+    logit(theta[i,j]) <- b[1] + b[2]*len[i,j]
+  }
+}
+}

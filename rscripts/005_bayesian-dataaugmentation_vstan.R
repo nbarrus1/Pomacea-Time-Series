@@ -12,6 +12,7 @@ options(mc.cores = parallel::detectCores())
 
 
 data.matrix.obs <- SRS.complete |> 
+   filter(Year > 1996) |> 
    group_by(Year, Period,Site,Plot) |> 
    mutate(ind = row_number(),
           species.factor = if_else(Species=="POMPAL", true = 1,false = 0)) |> 
@@ -39,7 +40,7 @@ data.matrix.obs <- SRS.complete |>
               `33`=0,
               `34`=0,
               `35`=0) |> 
-   left_join(plot_throws, by = c("Year", "Period","Site","Plot","Month","Day")) |> 
+   left_join(throws, by = c("Year", "Period","Site","Plot","Month","Day")) |> 
    filter(n_throw > 0) |> 
    ungroup() |> 
    mutate(nplot = row_number()) |> 
@@ -73,7 +74,7 @@ data.matrix.len <- SRS.complete |>
              `33`=as.numeric(NA),
              `34`=as.numeric(NA),
              `35`=as.numeric(NA))|> 
-  left_join(plot_throws, by = c("Year", "Period","Site","Plot","Month","Day"))|> 
+  left_join(throws, by = c("Year", "Period","Site","Plot","Month","Day"))|> 
   filter(n_throw > 0)|> 
   ungroup() |> 
   mutate(nplot = row_number()) |> 
