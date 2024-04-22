@@ -25,20 +25,93 @@ pompal_85to98_raw <- read_excel(here("data","MacroInvert 85-98 & throw numbers f
   rename(Cnt = Number...16)
 
 
-pompal_85to98_summ <- pompal_85to98_raw |> 
-  select(pompal,Year, Month, Day, Site, Plot, Throw, Cnt,WWt.,DWt.) |>  
-  group_by(pompal,Year,Month,Site) |> 
-  summarise(n_throw = n(),
-            Day = round(mean(Day, na.rm = T)),
-            Cnt = sum(Cnt,na.rm = T),
-            Wwt = sum(WWt., na.rm = T),
-            Dwt = sum(DWt., na.rm = T)) |> 
-  unite(Year,Month,Day, sep = "/", col = "Date") |> 
-  mutate(Date = ymd(Date),
-         density = Cnt/n_throw,
-         Site = as.character(Site)) |> 
-  filter(Site %in% c("6", "23","50")) |>
-  mutate(Site = as.numeric(Site))
+###create function to take my count data to individual data
+
+addrows_fromcolumn <- function(df,vctr){
+  
+  ##funciton  as is will only work for df with 8 columns
+  
+  df.final <- df[1,] 
+  temp <- as.matrix(df)
+  
+  for (i in 1:nrow(df)) {
+    
+    
+    if (vctr[i] == 0) { 
+      
+      df.final <- df.final
+      bind_rows(df[i,])
+      
+    } else {
+      
+      
+      
+      rowstoadd <- tibble(pompal = rep(temp[i,1], times = vctr[i]),
+                          Year = as.numeric(rep(temp[i,2], times = vctr[i])),
+                          Month = as.numeric(rep(temp[i,3], times = vctr[i])),
+                          Day = as.numeric(rep(temp[i,4], times = vctr[i])),
+                          Site = as.numeric(rep(temp[i,5], times = vctr[i])),
+                          Plot = rep(temp[i,6], times =vctr[i]),
+                          Throw = as.numeric(rep(temp[i,7], times = vctr[i])),
+                          Cnt = as.numeric(rep(temp[i,8], times = vctr[i])))
+      
+      df.final <- df.final |> 
+        bind_rows(rowstoadd)
+      
+    }}
+  
+  
+  df.final |> 
+    slice(2:n())
+  
+}
+
+
+#apply function
+
+pompal_85to97_ind <- pompal_85to98_raw |> 
+  select(pompal,Year, Month, Day, Site, Plot, Throw, Cnt) |> 
+  drop_na(Cnt) |> 
+  filter(Year != 1998)
+
+pompal_85to97_mul <- addrows_fromcolumn(df = pompal_85to97_ind, vctr = pompal_85to97_ind$Cnt) 
+
+#clean the data to be merged with MDW data
+
+pompal_85to97_ind <- pompal_85to98_raw |> 
+  select(pompal,Year, Month, Day, Site, Plot, Throw, Cnt) |> 
+  filter(Cnt == 0|is.na(Cnt)) |> 
+  filter(Year != 1998) |> 
+  bind_rows(pompal_85to97_mul) |> 
+  mutate(Species = case_when(is.na(Cnt)| Cnt == 0~"NO_POMPAL",
+                             Cnt>0 ~ "POMPAL"),
+         Length_mm = NA_integer_,
+         Period = case_when(Month == 2|Month == 3~1,
+                             Month == 4|Month == 5~2,
+                             Month == 7 ~ 3,
+                             Month == 9|Month==10|Month ==11 ~ 4,
+                             Month == 12~5),
+         Region = "SRS") |> 
+  select(-pompal,-Cnt,Month,-Day)
+
+
+
+###old data summary
+
+#pompal_85to98_summ <- pompal_85to98_raw |> 
+#  select(pompal,Year, Month, Day, Site, Plot, Throw, Cnt,WWt.,DWt.) |>  
+#  group_by(pompal,Year,Month,Site) |> 
+#  summarise(n_throw = n(),
+#            Day = round(mean(Day, na.rm = T)),
+#            Cnt = sum(Cnt,na.rm = T),
+#            Wwt = sum(WWt., na.rm = T),
+#            Dwt = sum(DWt., na.rm = T)) |> 
+#  unite(Year,Month,Day, sep = "/", col = "Date") |> 
+#  mutate(Date = ymd(Date),
+#         density = Cnt/n_throw,
+#         Site = as.character(Site)) |> 
+#  filter(Site %in% c("6", "23","50")) |>
+#  mutate(Site = as.numeric(Site))
 
 
 
@@ -74,9 +147,16 @@ z <- expand_grid(Year = 2006,
 
 SRS.complete <- x |> 
   bind_rows(y,z) |> 
+  filter(!(Year == 1996 & Site == 23)) |> 
+  filter(!(Year == 1996 & Site == 6)) |> 
+  filter(!(Year == 1996 & Site == 50)) |> 
+  filter(!(Year == 1997 & Site == 23)) |> 
+  filter(!(Year == 1997 & Site == 6)) |> 
+  filter(!(Year == 1997 & Site == 50)) |> 
   mutate(Region = "SRS") |> 
   full_join(SRS.raw, by = c("Region","Year","Period","Site","Plot","Throw")) |> 
   select(-Page,-`Sorted By`,-`Entered By`,-`Checked By`,-Day) |>
+  bind_rows(pompal_85to97_ind) |> 
   mutate(Length_mm = if_else(is.na(Length_mm)&is.na(Comments),
                              true = NA_integer_, false = Length_mm),
          Species = if_else(is.na(Species)&is.na(Comments),
@@ -99,15 +179,18 @@ SRS.summ <- SRS.complete |>
                      false = n),
          n_throw = sum(n,na.rm = TRUE)) |> 
   pivot_wider(names_from = Species, values_from = count)|>
-  group_by(Year,Site) |> 
-  summarise(n_throw = sum(n, na.rm = T),
+  ungroup() |> 
+  #group_by(Year,Month,Day, Period,Site, Plot) |>
+  group_by(Year,Month,Day, Period,Site) |> 
+  #group_by(Year,Site) |> 
+  summarise(n_throw = sum(n, na.rm = T) ,
             NO_POMPAL = sum(NO_POMPAL,na.rm = T),
-            POMPAL = sum(POMPAL,na.rm = T),
+             POMPAL = sum(POMPAL,na.rm = T),
             `NA` = sum(`NA`,na.rm = T)) |> 
   mutate(POMPAL = if_else(is.na(POMPAL) & is.na(`NA`),
                                 true = 0,
                                 false = POMPAL),
-         density = POMPAL/n_throw) #|> 
+         density = POMPAL/n_throw) |> 
   unite(Month,Day,Year,col = "Date", sep = "/") |> 
   mutate(Date = mdy(Date),
          Year = year(Date),
@@ -117,3 +200,8 @@ SRS.summ <- SRS.complete |>
 
 throws <- SRS.summ |> 
   select(-POMPAL,-NO_POMPAL,-`NA`,-density)
+
+
+rm(pompal_85to97_mul,pompal_85to98_raw,pompal_85to97_ind, SRS.raw,x,y,z)
+
+
