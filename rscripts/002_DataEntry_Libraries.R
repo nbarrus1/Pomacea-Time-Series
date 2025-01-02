@@ -84,7 +84,7 @@ pompal_85to97_ind <- pompal_85to98_raw |>
   filter(Cnt == 0|is.na(Cnt)) |> 
   filter(Year != 1998) |> 
   bind_rows(pompal_85to97_mul) |> 
-  mutate(Species = case_when(is.na(Cnt)| Cnt == 0~"NO_POMPAL",
+  mutate(Species = case_when(is.na(Cnt)| Cnt == 0~"NO_POMACEA",
                              Cnt>0 ~ "POMPAL"),
          Length_mm = NA_integer_,
          Period = case_when(Month == 2|Month == 3~1,
@@ -93,7 +93,8 @@ pompal_85to97_ind <- pompal_85to98_raw |>
                              Month == 9|Month==10|Month ==11 ~ 4,
                              Month == 12~5),
          Region = "SRS") |> 
-  select(-pompal,-Cnt,Month,-Day)
+  select(-pompal,-Cnt,Month,-Day) |> 
+  mutate(Site = as.character(Site))
 
 
 
@@ -117,51 +118,68 @@ pompal_85to97_ind <- pompal_85to98_raw |>
 
 
 
-SRS.raw <- read_excel(here("data","SRS_POMPAL_forbayesproject.xlsx"),
+MDW.raw <- read_excel(here("data","AppleSnail_Length_1996-2024.xlsx"),
                       sheet = 1,na = c("",".")) |> 
-  filter(Site != "CP") |> 
-  mutate(Site = as.numeric(Site),
-         Throw = if_else(Throw == "1,2,3,4,5,6,7"|Throw == "1,2,7",
-                         true = 1, false = as.numeric(Throw)),
-         filter.temp = if_else(is.na(Comments),true = "a",
-                               false = if_else(Comments == "EMPTY", true = "b",
-                                               false = "a"))) |> 
-  filter(filter.temp == "a") |> 
-  select(-filter.temp)
+  filter(Site != "13") |> 
+  mutate(rm = if_else(Comments == "EMPTY" | Comments == "EMPTY, THRGUESS",
+                      true = "a", false ="b")) |> 
+  filter(is.na(rm) | rm == "b")
 
-x <- expand_grid(Year = unique(SRS.raw$Year),
-                 Period = unique(SRS.raw$Period),
-                 Site = as.numeric(unique(SRS.raw$Site)),
-                 Plot = c("A","B","C"),
-                 Throw = unique(SRS.raw$Throw))
+WCA <- expand_grid(Year = min(MDW.raw$Year[MDW.raw$Region== "WCA"]):2024,  
+                 Region = unique(MDW.raw$Region[MDW.raw$Region== "WCA"]),
+                 Period = unique(MDW.raw$Period[MDW.raw$Region== "WCA"]),
+                 Site = unique(MDW.raw$Site[MDW.raw$Region== "WCA"]),
+                 Plot = unique(MDW.raw$Plot[MDW.raw$Region== "WCA"]),
+                 Throw = 1:5) |> 
+  mutate(Site = as.character(Site))
 
-y <- expand_grid(Year = c(2005,2006,2007),
-                 Period = unique(SRS.raw$Period),
+TSL <- expand_grid(Year = min(MDW.raw$Year[MDW.raw$Region== "TSL"]):2024,
+                   Region = unique(MDW.raw$Region[MDW.raw$Region== "TSL"]),
+                   Period = unique(MDW.raw$Period[MDW.raw$Region== "TSL"]),
+                   Site = unique(MDW.raw$Site[MDW.raw$Region== "TSL"]),
+                   Plot = unique(MDW.raw$Plot[MDW.raw$Region== "TSL"]),
+                   Throw = 1:7)|> 
+  mutate(Site = as.character(Site))
+
+SRS <- expand_grid(Year = min(MDW.raw$Year[MDW.raw$Region== "SRS"]):2024,  
+                   Region = unique(MDW.raw$Region[MDW.raw$Region== "SRS"]),
+                   Period = unique(MDW.raw$Period[MDW.raw$Region== "SRS"]),
+                   Site = unique(MDW.raw$Site[MDW.raw$Region== "SRS"]),
+                   Plot = c("A","B","C"),
+                   Throw = 1:7) |> 
+  mutate(Site = as.character(Site))
+
+SRS.extraplot.1 <- expand_grid(Year = c(2005,2006,2007),
+                 Period = unique(MDW.raw$Period),
+                 Region = "SRS",
                  Site = c(6,23),
                  Plot = c("D","E"),
-                 Throw = 1:7)
-z <- expand_grid(Year = 2006,
+                 Throw = 1:7)|> 
+  mutate(Site = as.character(Site))
+
+SRS.extraplot.2 <- expand_grid(Year = 2006,
                  Period = 1:5,
+                 Region = "SRS",
                  Plot = "E",
                  Site = 50,
-                 Throw = 1:7)
+                 Throw = 1:7)|> 
+  mutate(Site = as.character(Site))
 
-SRS.complete <- x |> 
-  bind_rows(y,z) |> 
-  filter(!(Year == 1996 & Site == 23)) |> 
-  filter(!(Year == 1996 & Site == 6)) |> 
-  filter(!(Year == 1996 & Site == 50)) |> 
-  filter(!(Year == 1997 & Site == 23)) |> 
-  filter(!(Year == 1997 & Site == 6)) |> 
-  filter(!(Year == 1997 & Site == 50)) |> 
-  mutate(Region = "SRS") |> 
-  full_join(SRS.raw, by = c("Region","Year","Period","Site","Plot","Throw")) |> 
+data.complete <- WCA |> 
+  bind_rows(SRS,TSL,SRS.extraplot.1,SRS.extraplot.2) |> 
+  filter(!(Year == 1996 & Site == "23" & Region == "SRS")) |> 
+  filter(!(Year == 1996 & Site == "6" & Region == "SRS")) |> 
+  filter(!(Year == 1996 & Site == "50" & Region == "SRS")) |> 
+  filter(!(Year == 1997 & Site == "23" & Region == "SRS")) |> 
+  filter(!(Year == 1997 & Site == "6" & Region == "SRS")) |> 
+  filter(!(Year == 1997 & Site == "50" & Region == "SRS")) |> 
+  full_join(MDW.raw, by = c("Region","Year","Period","Site","Plot","Throw")) |> 
   select(-Page,-`Sorted By`,-`Entered By`,-`Checked By`,-Day) |>
   bind_rows(pompal_85to97_ind) |> 
   mutate(Length_mm = if_else(is.na(Length_mm)&is.na(Comments),
                              true = NA_integer_, false = Length_mm),
          Species = if_else(is.na(Species)&is.na(Comments),
-                           true = "NO_POMPAL",false = Species),
+                           true = "NO_POMACEA",false = Species),
          Month = case_when(Period == 1 ~2,
                            Period == 2 ~4,
                            Period == 3 ~7,
@@ -169,10 +187,10 @@ SRS.complete <- x |>
                            Period == 5 ~12),
          Day = 1)
   
-SRS.summ <- SRS.complete |> 
-  group_by(Year,Month,Day,Period,Site,Plot,Species,Throw) |> 
+data.summ <- data.complete |> 
+  group_by(Year,Month,Day,Region,Period,Site,Plot,Species,Throw) |> 
   summarise(count= n()) |> 
-  group_by(Year,Month,Day,Period,Site,Plot,Species) |> 
+  group_by(Year,Month,Day,Region,Period,Site,Plot,Species) |> 
   summarise(n = n(),
             count = sum(count)) |> 
   mutate(n = if_else(is.na(Species),
@@ -181,17 +199,23 @@ SRS.summ <- SRS.complete |>
          n_throw = sum(n,na.rm = TRUE)) |> 
   pivot_wider(names_from = Species, values_from = count)|>
   ungroup() |> 
-  group_by(Year,Month,Day, Period,Site, Plot) |>
-  #group_by(Year,Month,Day, Period,Site) |> 
-  #group_by(Year,Site) |> 
+  #group_by(Year,Month,Day,Region,Period,Site, Plot) |>
+  group_by(Year,Month,Day,Region,Period,Site) |> 
+  #group_by(Year,Month,Day,Region,Period) |> 
+  #group_by(Year,Region) |> 
   summarise(n_throw = sum(n, na.rm = T) ,
-            NO_POMPAL = sum(NO_POMPAL,na.rm = T),
+            NO_POMACEA = sum(NO_POMACEA,na.rm = T),
              POMPAL = sum(POMPAL,na.rm = T),
+            POMMAC = sum(POMMAC,na.rm = T),
             `NA` = sum(`NA`,na.rm = T)) |> 
   mutate(POMPAL = if_else(is.na(POMPAL) & is.na(`NA`),
                                 true = 0,
                                 false = POMPAL),
-         density = POMPAL/n_throw) |> 
+         POMMAC = if_else(is.na(POMMAC) & is.na(`NA`),
+                           true = 0,
+                           false = POMMAC),
+         POMPAL.density = POMPAL/n_throw,
+         POMMAC.density = POMMAC/n_throw) |> 
   unite(Month,Day,Year,col = "Date", sep = "/") |> 
   mutate(Date = mdy(Date),
          Year = year(Date),
@@ -199,10 +223,6 @@ SRS.summ <- SRS.complete |>
          Day = day(Date))  
 
 
-throws <- SRS.summ |> 
-  select(-POMPAL,-NO_POMPAL,-`NA`,-density)
-
-
-rm(pompal_85to97_mul,pompal_85to98_raw,pompal_85to97_ind, SRS.raw,x,y,z, addrows_fromcolumn)
-
+rm(pompal_85to97_ind, pompal_85to97_mul, pompal_85to98_raw,SRS,
+   SRS.extraplot.1,SRS.extraplot.2,TSL,WCA, addrows_fromcolumn)
 
