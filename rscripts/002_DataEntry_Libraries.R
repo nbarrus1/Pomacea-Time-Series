@@ -223,6 +223,14 @@ data.summ <- data.complete |>
          Day = day(Date))  
 
 
+
+mwd.hydrology <- read_csv(here("data", "EDEN_MDW_1992_2024_P2.csv")) |> 
+  select(DATE, YEAR, MONTH, DAY, REGION, SITE, PLOT, DEPTH) |> 
+  filter(REGION != "PHD") |> 
+  group_by(REGION,SITE,YEAR, MONTH, DAY, DATE) |> 
+  summarise(DEPTH = mean(DEPTH))
+
+
 rm(pompal_85to97_ind, pompal_85to97_mul, pompal_85to98_raw,SRS,
    SRS.extraplot.1,SRS.extraplot.2,TSL,WCA, addrows_fromcolumn)
 
