@@ -165,7 +165,7 @@ SRS.extraplot.2 <- expand_grid(Year = 2006,
                  Throw = 1:7)|> 
   mutate(Site = as.character(Site))
 
-data.complete <- WCA |> 
+data.apple <- WCA |> 
   bind_rows(SRS,TSL,SRS.extraplot.1,SRS.extraplot.2) |> 
   filter(!(Year == 1996 & Site == "23" & Region == "SRS")) |> 
   filter(!(Year == 1996 & Site == "6" & Region == "SRS")) |> 
@@ -185,9 +185,23 @@ data.complete <- WCA |>
                            Period == 3 ~7,
                            Period == 4 ~10,
                            Period == 5 ~12),
-         Day = 1)
+         Day = 1,
+         Site = case_when(Site == "1" ~ "01",
+                     Site == "2" ~ "02",
+                     Site == "3" ~ "03",
+                     Site == "4" ~ "04",
+                     Site == "5" ~ "05",
+                     Site == "6" ~ "06",
+                     Site == "7" ~ "07",
+                     Site == "8" ~ "08",
+                     Site == "9" ~ "09",
+                     .default = Site
+           )) |> 
+  filter(!(Year == 1992 & Site == "07" & Region == "SRS")) |> 
+  filter(!(Year == 1992 & Site == "08" & Region == "SRS")) |>
+  filter(!(Year == 1992 & Site == "37" & Region == "SRS")) 
   
-data.summ <- data.complete |> 
+data.apple.summ <- data.apple |> 
   group_by(Year,Month,Day,Region,Period,Site,Plot,Species,Throw) |> 
   summarise(count= n()) |> 
   group_by(Year,Month,Day,Region,Period,Site,Plot,Species) |> 
@@ -220,16 +234,99 @@ data.summ <- data.complete |>
   mutate(Date = mdy(Date),
          Year = year(Date),
          Month = month(Date),
-         Day = day(Date))  
+         Day = day(Date),
+         target.year = case_when(Date %within% interval(mdy("7/1/1985"),mdy("6/30/1986")) ~ 1985,
+                                 Date %within% interval(mdy("7/1/1986"),mdy("6/30/1987")) ~ 1986,
+                                 Date %within% interval(mdy("7/1/1987"),mdy("6/30/1988")) ~ 1987,
+                                 Date %within% interval(mdy("7/1/1988"),mdy("6/30/1989")) ~ 1988,
+                                 Date %within% interval(mdy("7/1/1989"),mdy("6/30/1990")) ~ 1989,
+                                 Date %within% interval(mdy("7/1/1990"),mdy("6/30/1991")) ~ 1990,
+                                 Date %within% interval(mdy("7/1/1991"),mdy("6/30/1992")) ~ 1991,
+                                 Date %within% interval(mdy("7/1/1992"),mdy("6/30/1993")) ~ 1992,
+                                 Date %within% interval(mdy("7/1/1993"),mdy("6/30/1994")) ~ 1993,
+                                 Date %within% interval(mdy("7/1/1994"),mdy("6/30/1995")) ~ 1994,
+                                 Date %within% interval(mdy("7/1/1995"),mdy("6/30/1996")) ~ 1995,
+                                 Date %within% interval(mdy("7/1/1996"),mdy("6/30/1997")) ~ 1996,
+                                 Date %within% interval(mdy("7/1/1997"),mdy("6/30/1998")) ~ 1997,
+                                 Date %within% interval(mdy("7/1/1998"),mdy("6/30/1999")) ~ 1998,
+                                 Date %within% interval(mdy("7/1/1999"),mdy("6/30/2000")) ~ 1999,
+                                 Date %within% interval(mdy("7/1/2000"),mdy("6/30/2001")) ~ 2000,
+                                 Date %within% interval(mdy("7/1/2001"),mdy("6/30/2002")) ~ 2001,
+                                 Date %within% interval(mdy("7/1/2002"),mdy("6/30/2003")) ~ 2002,
+                                 Date %within% interval(mdy("7/1/2003"),mdy("6/30/2004")) ~ 2003,
+                                 Date %within% interval(mdy("7/1/2004"),mdy("6/30/2005")) ~ 2004,
+                                 Date %within% interval(mdy("7/1/2005"),mdy("6/30/2006")) ~ 2005,
+                                 Date %within% interval(mdy("7/1/2006"),mdy("6/30/2007")) ~ 2006,
+                                 Date %within% interval(mdy("7/1/2007"),mdy("6/30/2008")) ~ 2007,
+                                 Date %within% interval(mdy("7/1/2008"),mdy("6/30/2009")) ~ 2008,
+                                 Date %within% interval(mdy("7/1/2009"),mdy("6/30/2010")) ~ 2009,
+                                 Date %within% interval(mdy("7/1/2010"),mdy("6/30/2011")) ~ 2010,
+                                 Date %within% interval(mdy("7/1/2011"),mdy("6/30/2012")) ~ 2011,
+                                 Date %within% interval(mdy("7/1/2012"),mdy("6/30/2013")) ~ 2012,
+                                 Date %within% interval(mdy("7/1/2013"),mdy("6/30/2014")) ~ 2013,
+                                 Date %within% interval(mdy("7/1/2014"),mdy("6/30/2015")) ~ 2014,
+                                 Date %within% interval(mdy("7/1/2015"),mdy("6/30/2016")) ~ 2015,
+                                 Date %within% interval(mdy("7/1/2016"),mdy("6/30/2017")) ~ 2016,
+                                 Date %within% interval(mdy("7/1/2017"),mdy("6/30/2018")) ~ 2017,
+                                 Date %within% interval(mdy("7/1/2018"),mdy("6/30/2019")) ~ 2018,
+                                 Date %within% interval(mdy("7/1/2019"),mdy("6/30/2020")) ~ 2019,
+                                 Date %within% interval(mdy("7/1/2020"),mdy("6/30/2021")) ~ 2020,
+                                 Date %within% interval(mdy("7/1/2021"),mdy("6/30/2022")) ~ 2021,
+                                 Date %within% interval(mdy("7/1/2022"),mdy("6/30/2023")) ~ 2022,
+                                 Date %within% interval(mdy("7/1/2023"),mdy("6/30/2024")) ~ 2023,
+                                                            .default = 2024),
+         target.month = month(Date),
+         target.day = day(Date)) |> 
+  unite(target.month,target.day,target.year, col = "TARGET.DATE", sep = "/") |> 
+  mutate(TARGET.DATE= mdy(TARGET.DATE),
+         target.month.lag = month(TARGET.DATE),
+         target.day.lag = day(TARGET.DATE),
+         target.year.lag = year(TARGET.DATE)-1) |> 
+  unite(target.month.lag,target.day.lag,target.year.lag, col = "TARGET.DATE.LAG", sep = "/") |> 
+  mutate(TARGET.DATE.LAG = mdy(TARGET.DATE.LAG))
 
 
 
-mwd.hydrology <- read_csv(here("data", "EDEN_MDW_1992_2024_P2.csv")) |> 
-  select(DATE, YEAR, MONTH, DAY, REGION, SITE, PLOT, DEPTH) |> 
-  filter(REGION != "PHD") |> 
-  group_by(REGION,SITE,YEAR, MONTH, DAY, DATE) |> 
-  summarise(DEPTH = mean(DEPTH))
-
+mwd.hydrology <- read_csv(here("data", "EDEN_MDW_1992_2024_P2.csv")) |>   #read in data
+  #select(DATE, YEAR, MONTH, DAY, REGION, SITE, PLOT)|> 
+  filter(REGION != "PHD") |>   #remove PHD data
+  unite(MONTH, DAY, TARGETYEAR, col = TARGET.DATE, sep = "/") |> 
+  group_by(REGION,SITE,TARGET.DATE,DATE,SEASON) |>                        #group by everything but plot to get site summaries
+  summarise_if(is.numeric, mean, na.rm = TRUE) |>                         #get means of every site, year, period combo for every column that is numeric
+  ungroup() |> 
+  mutate(DATE = mdy(DATE),
+         TARGET.DATE = mdy(TARGET.DATE),
+         DAY = day(DATE),
+         MONTH = month(DATE),
+         target.depths = if_else(DEPTH >=20 & DEPTH <= 50, true = 1,false = 0),  #Identify days with target depths
+         target.dates = if_else(MONTH >=3 & MONTH <= 6, true = 1, false = 0),    #identify days with target dates
+         target.days = if_else(target.depths == 1 & target.dates == 1,           #Identify days with target depths are within target dates
+                               true = 1, false = 0),
+         dry = if_else(DEPTH > 0, true = 0, false = 1),
+         TARGET.YEAR = year(TARGET.DATE)) |>                                     #identify days that are dry
+  group_by(REGION,SITE,TARGET.YEAR) |>                                           #group by sites and years to get year summaries 
+  mutate(tot.target.days = sum(target.days),                                     #find the total number of days within target depths during the correct dates for each site and year
+         dry = sum(dry),                                                         #find the number of days dry each year
+         dry_down = if_else(dry > 0, true = "yes", false = "no"),
+         SITE = case_when(SITE == "1" ~ "01",
+                          SITE == "2" ~ "02",
+                          SITE == "3" ~ "03",
+                          SITE == "4" ~ "04",
+                          SITE == "5" ~ "05",
+                          SITE == "6" ~ "06",
+                          SITE == "7" ~ "07",
+                          SITE == "8" ~ "08",
+                          SITE == "9" ~ "09",
+                          .default = SITE)) |> 
+  select(-target.depths,-target.dates,-target.days) |>      #remove the intermediate variables
+  rename(Region = REGION,
+         Site = SITE,
+         Year = YEAR,
+         Month = MONTH,
+         Day = DAY,
+         Date = DATE)|> 
+  select(-Date,-Year,-Month,-Day) |> 
+  ungroup()
 
 rm(pompal_85to97_ind, pompal_85to97_mul, pompal_85to98_raw,SRS,
    SRS.extraplot.1,SRS.extraplot.2,TSL,WCA, addrows_fromcolumn)

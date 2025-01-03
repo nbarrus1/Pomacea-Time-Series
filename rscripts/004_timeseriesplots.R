@@ -19,7 +19,7 @@
 
 
 
-data.summ |> 
+data.apple.summ |> 
   #filter(Site != 50) |> 
   filter(Region == "SRS") |> 
   mutate(Date = as.POSIXct(Date)) |> 
@@ -31,7 +31,7 @@ data.summ |>
   geom_hline(yintercept = 0.4, color = "red")+
   labs(title = "Shark River Slough (SRS)")
 
-data.summ |> 
+data.apple.summ |> 
   #filter(Site != 50) |> 
   filter(Region == "WCA") |> 
   mutate(Date = as.POSIXct(Date)) |> 
@@ -43,7 +43,7 @@ data.summ |>
   geom_hline(yintercept = 0.4, color = "red")+
   labs(title = "Water Conservation Area 3 (WCA)")
 
-data.summ |> 
+data.apple.summ |> 
   #filter(Site != 50) |> 
   filter(Region == "TSL") |> 
   mutate(Date = as.POSIXct(Date)) |> 
