@@ -201,6 +201,8 @@ data.apple <- WCA |>
   filter(!(Year == 1992 & Site == "08" & Region == "SRS")) |>
   filter(!(Year == 1992 & Site == "37" & Region == "SRS")) 
   
+
+
 data.apple.summ <- data.apple |> 
   group_by(Year,Month,Day,Region,Period,Site,Plot,Species,Throw) |> 
   summarise(count= n()) |> 
@@ -284,6 +286,8 @@ data.apple.summ <- data.apple |>
          target.year.lag = year(TARGET.DATE)-1) |> 
   unite(target.month.lag,target.day.lag,target.year.lag, col = "TARGET.DATE.LAG", sep = "/") |> 
   mutate(TARGET.DATE.LAG = mdy(TARGET.DATE.LAG))
+
+
 
 
 

@@ -12,9 +12,12 @@ data.apple.hydro <- data.apple.summ |>
 
 
 data.apple.hydro |> 
-  ggplot(aes(y = POMPAL.density, x = tot.target.days))+
+ #ggplot(aes(y = POMPAL.density, x = tot.target.days, color = dry_down))+
+ #ggplot(aes(y = POMPAL.density, x = tot.target.days))+
+ ggplot(aes(y = POMPAL.density, x = dry))+
   theme_bw()+
-  geom_smooth(method = "loess")#+
+  geom_smooth()+
+  #geom_smooth(method = "loess")#+
   geom_point()
 
 
