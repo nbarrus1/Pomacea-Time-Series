@@ -139,11 +139,32 @@ data.apple.summ.ls <- data.apple.summ|>
   unnest(data.calc)
 
 
-data.apple.summ.ls |> 
-  filter(lambda < 20) |> 
+
+####Allee effect plot
+
+p2 <- data.apple.summ.ls |> 
+  filter(lambda < 20 & lambda > 0) |> 
   ggplot(aes(x = POMPAL.density, y = log(lambda)))+
   theme_bw()+
-  geom_point()+
-  geom_smooth()+
-  geom_hline(yintercept = 0, color = "red")
-  
+  geom_hline(yintercept = 0, color = "#d0938a", linetype = "dashed",linewidth = 1)+
+  geom_point(size = 6, shape = 21, color = "black", fill = "#8ba1b6")+
+  geom_smooth(color = "#3f3546", linewidth = 2)+
+  labs(y = expression(paste("Population Growth (", r[t]," obs)")),
+       x = expression(paste("Density (n ","\u00B7"," ",m^-2,")" )))+
+  scale_y_continuous(breaks = seq(round(min(log(data.apple.summ.ls$lambda[data.apple.summ.ls$lambda>0]), na.rm = T)),
+                                  round(max(log(data.apple.summ.ls$lambda[data.apple.summ.ls$lambda<20]), na.rm = T)),
+                                  by = 1))+
+  scale_x_continuous(breaks = seq(round(min(data.apple.summ.ls$POMPAL.density, na.rm = T)),
+                                  round(max(data.apple.summ.ls$POMPAL.density, na.rm = T)),
+                                  by = 0.2),
+                     expand = expansion(add = 0.01))+
+  theme(axis.title = element_text(face = "bold", size = "40"),
+        axis.text = element_text(size = "30"))
+
+
+ggsave(filename = "C:/Users/nbarr/OneDrive/Pictures/Documents/Career/Presentations/FIU_Biosynposium_2025/Demographic.pdf",
+       plot = p2,
+       device = "pdf",
+       units = "in",
+       width = 16,
+       height = 16)  
